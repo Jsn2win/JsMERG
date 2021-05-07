@@ -1,0 +1,14 @@
+*.pyc
+.tox
+*.egg-info
+AUTHORS
+cover
+.coverage
+dist
+.eggs
+.pytest_cache
+docs/build
+test.env
+prod.env
+test.monitoring.env
+prod.monitoring.env

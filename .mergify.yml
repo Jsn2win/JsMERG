@@ -1,0 +1,103 @@
+pull_request_rules:
+  - name: automatic merge
+    conditions:
+      - base=master
+      - status-success=Semantic Pull Request
+      - "status-success=ci/circleci: requirements"
+      - "status-success=ci/circleci: datadog"
+      - "status-success=ci/circleci: pep8"
+      - "status-success=ci/circleci: py38"
+      - "status-success=ci/circleci: docs"
+      - "#approved-reviews-by>=1"
+      - label!=work-in-progress
+      - label!=manual merge
+    actions:
+      merge:
+        strict: "smart"
+        method: rebase
+  - name: automatic merge for hotfix
+    conditions:
+      - base=master
+      - status-success=Semantic Pull Request
+      - body~=(?m)^Fixes MERGIFY-ENGINE-
+      - "status-success=ci/circleci: requirements"
+      - "status-success=ci/circleci: datadog"
+      - "status-success=ci/circleci: pep8"
+      - "status-success=ci/circleci: py38"
+      - "status-success=ci/circleci: docs"
+      - label=hotfix
+      - "#changes-requested-reviews-by=0"
+      - label!=work-in-progress
+      - label!=manual merge
+    actions:
+      merge:
+        strict: "smart"
+        method: rebase
+  - name: automatic merge from dependabot
+    conditions:
+      - status-success=Semantic Pull Request
+      - author=dependabot[bot]
+      - label!=work-in-progress
+      - label!=manual merge
+      - "status-success=ci/circleci: requirements"
+      - "status-success=ci/circleci: datadog"
+      - "status-success=ci/circleci: pep8"
+      - "status-success=ci/circleci: py38"
+      - "status-success=ci/circleci: docs"
+    actions:
+      merge:
+        strict: "smart"
+        method: rebase
+  - name: dismiss reviews except for core devs
+    conditions:
+      - author!=@devs
+    actions:
+      dismiss_reviews: {}
+  - name: dismiss reviews for core devs
+    conditions:
+      - author=@devs
+    actions:
+      dismiss_reviews:
+          # Do not remove approval for core devs
+          approved: False
+  - name: auto add wip
+    conditions:
+      - title~=^(wip|WIP).*
+    actions:
+      label:
+        add: ["work-in-progress"]
+  - name: request review
+    conditions:
+      - -author=dependabot[bot]
+      - label!=work-in-progress
+      - -merged
+      - -closed
+      - "#approved-reviews-by=0"
+      - "#changes-requested-reviews-by=0"
+    actions:
+      request_reviews:
+        teams:
+          - devs
+  - name: warn on no Sentry
+    conditions:
+      - -body~=(?m)^Fixes MERGIFY-ENGINE-
+      - label=hotfix
+    actions:
+      comment:
+        message: Your pull request is a hotfix but does not fix a Sentry issue.
+  - name: warn on conflicts
+    conditions:
+      - conflict
+    actions:
+      comment:
+        message: This pull request is now in conflict :(
+      label:
+        add:
+          - conflict
+  - name: remove conflict label if not needed
+    conditions:
+      - -conflict
+    actions:
+      label:
+        remove:
+          - conflict
